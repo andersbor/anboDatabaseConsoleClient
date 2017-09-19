@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data.SqlClient;
@@ -20,9 +19,11 @@ namespace Anbo1DatabaseConsoleClient
             using (SqlConnection databaseConnection = new SqlConnection(connString))
             {
                 databaseConnection.Open();
-                ShowAllStudents(databaseConnection);
+                IList<Student> allStudents = GetAllStudents(databaseConnection);
+                Console.WriteLine(string.Join("\n", allStudents));
                 InsertStudents(databaseConnection);
-                ShowAllStudents(databaseConnection);
+                allStudents = GetAllStudents(databaseConnection);
+                Console.WriteLine(string.Join("\n", allStudents));
             }
         }
 
@@ -35,7 +36,7 @@ namespace Anbo1DatabaseConsoleClient
             return connString;
         }
 
-        private static IList<Student> ShowAllStudents(SqlConnection databaseConnection)
+        private static IList<Student> GetAllStudents(SqlConnection databaseConnection)
         {
             using (SqlCommand selectCommand = new SqlCommand(SelectAllStudents, databaseConnection))
             {
@@ -51,17 +52,22 @@ namespace Anbo1DatabaseConsoleClient
                             int semester = reader.GetInt32(2);
                             DateTime timeStamp = reader.GetDateTime(3);
                             // normally you would not show the ID to the user
-                            Console.WriteLine(id + " " + name + " " + semester + " " + timeStamp);
+                            //Console.WriteLine(id + " " + name + " " + semester + " " + timeStamp);
                             Student st = new Student()
                             {
-                                
-                            }
+                                Id = id,
+                                Name = name,
+                                Semester = semester,
+                                TimeStamp = timeStamp
+                            };
+                            students.Add(st);
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine("No rows");
-                    }
+                    //else
+                    //{
+                    //    Console.WriteLine("No rows");
+                    //}
+                    return students;
                 }
             }
         }
@@ -75,13 +81,18 @@ namespace Anbo1DatabaseConsoleClient
                 Console.Write("Semester: ");
                 string semester = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(semester)) break;
-                using (SqlCommand insertCommand = new SqlCommand(InsertStudent, databaseConnection))
-                {
-                    insertCommand.Parameters.AddWithValue("@name", name);
-                    insertCommand.Parameters.AddWithValue("@semester", semester);
-                    int rowsAffected = insertCommand.ExecuteNonQuery();
-                    Console.WriteLine(rowsAffected + " row(s) affected");
-                }
+                InsertOneStudent(databaseConnection, name, semester);
+            }
+        }
+
+        private static void InsertOneStudent(SqlConnection databaseConnection, string name, string semester)
+        {
+            using (SqlCommand insertCommand = new SqlCommand(InsertStudent, databaseConnection))
+            {
+                insertCommand.Parameters.AddWithValue("@name", name);
+                insertCommand.Parameters.AddWithValue("@semester", semester);
+                int rowsAffected = insertCommand.ExecuteNonQuery();
+                Console.WriteLine(rowsAffected + " row(s) affected");
             }
         }
     }
